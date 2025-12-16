@@ -17,7 +17,7 @@ async function testAgentGeneration() {
     console.log(`\n📝 Testing prompt: "${prompt}"\n`);
     
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
       const fullPrompt = `You are an expert voice AI agent designer. Create a professional voice agent configuration from this user description.
 
@@ -53,11 +53,14 @@ Return ONLY valid JSON:
 
       const response = result.response.text();
       
+      // Remove markdown code blocks if present
+      let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
       // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error('❌ Failed to extract JSON from response');
-        console.log('Response:', response);
+        console.log('Response:', response.substring(0, 200) + '...');
         continue;
       }
 

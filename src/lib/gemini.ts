@@ -10,7 +10,7 @@ export class GeminiService {
    */
   static async generateAgentConfig(userPrompt: string): Promise<AgentConfig> {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
       const prompt = `You are an expert voice AI agent designer. Create a professional voice agent configuration from this user description.
 
@@ -208,8 +208,11 @@ Now generate for the user's description above. Return ONLY the JSON, no other te
 
       const response = result.response.text();
       
+      // Remove markdown code blocks if present
+      let cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
       // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error("Failed to parse Gemini response as JSON");
       }
@@ -245,7 +248,7 @@ Now generate for the user's description above. Return ONLY the JSON, no other te
     knowledgeBase: string
   ): Promise<string> {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
       const enhancementPrompt = `Enhance this voice agent's system prompt with additional knowledge.
 
@@ -279,7 +282,7 @@ Return ONLY the enhanced system prompt text.`;
     extractFields: ExtractField[]
   ): Promise<Record<string, any>> {
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
       const extractionPrompt = `Extract information from this conversation:
 
