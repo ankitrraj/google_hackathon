@@ -1,0 +1,57 @@
+  // VoiceForge Database Schema
+// Using Prisma ORM with Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Agents table - Stores voice agent configurations
+model Agent {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String?  @map("user_id")
+  name           String   @db.VarChar(100)
+  industry       String
+  firstMessage   String?  @map("first_message") @db.Text
+  systemPrompt   String   @map("system_prompt") @db.Text
+  questions      Json     @default("[]")
+  extractFields  Json     @map("extract_fields") @default("[]")
+  knowledgeBase  String?  @map("knowledge_base") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  // Relations
+  calls          Call[]
+
+  @@index([userId], name: "idx_agents_user_id")
+  @@index([createdAt(sort: Desc)], name: "idx_agents_created_at")
+  @@map("agents")
+}
+
+// Calls table - Stores voice call records
+model Call {
+  id            String   @id @default(uuid()) @db.Uuid
+  agentId       String   @map("agent_id") @db.Uuid
+  transcript    String   @db.Text
+  extractedData Json     @map("extracted_data") @default("{}")
+  duration      Int      @default(0)
+  status        CallStatus @default(IN_PROGRESS)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  // Relations
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId], name: "idx_calls_agent_id")
+  @@index([createdAt(sort: Desc)], name: "idx_calls_created_at")
+  @@index([status], name: "idx_calls_status")
+  @@map("calls")
+}
+
+// Enums
+enum CallStatus {
+  IN_PROGRESS  @map("in_progress")
+  COMPLETED    @map("completed")
+  FAILED       @map("failed")
+}

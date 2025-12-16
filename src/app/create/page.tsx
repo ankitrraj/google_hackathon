@@ -129,6 +129,50 @@ export default function CreatePage() {
     );
   }
 
+  const generateAgent = async () => {
+    if (!prompt.trim()) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/agents/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, userId: 'demo_user' })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate agent');
+      }
+
+      const data = await response.json();
+      
+      // Update config with generated data
+      setConfig({
+        name: data.config.name,
+        language: 'English',
+        voice: 'Google',
+        aiModel: 'Gemini',
+        transcription: 'Google',
+        welcomeMessage: data.config.first_message || data.config.system_prompt.substring(0, 200),
+        sections: data.config.questions.map((q: string, idx: number) => ({
+          id: String(idx + 1),
+          title: q,
+          enabled: true
+        }))
+      });
+
+      sessionStorage.setItem("agentPrompt", prompt);
+      sessionStorage.setItem("agentConfig", JSON.stringify(data.config));
+      setShowDashboard(true);
+    } catch (error) {
+      console.error('Error generating agent:', error);
+      alert('Failed to generate agent. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!showDashboard) {
     return (
       <div className="min-h-screen bg-background p-8">
@@ -144,18 +188,11 @@ export default function CreatePage() {
             className="min-h-[150px] mb-4"
           />
           <Button 
-            onClick={() => {
-              sessionStorage.setItem("agentPrompt", prompt);
-              setIsLoading(true);
-              setTimeout(() => {
-                setShowDashboard(true);
-                setIsLoading(false);
-              }, 1500);
-            }}
-            disabled={!prompt.trim()}
+            onClick={generateAgent}
+            disabled={!prompt.trim() || isLoading}
             className="bg-primary"
           >
-            Create Assistant →
+            {isLoading ? 'Generating...' : 'Create Assistant →'}
           </Button>
         </div>
       </div>
@@ -187,22 +224,6 @@ export default function CreatePage() {
             </Button>
             <Button variant="outline" size="sm" className="w-full justify-start text-xs">
               Upload knowledge →
-            </Button>
-          </div>
-        </div>
-        
-        {/* Balance Warning */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center justify-between bg-card rounded-lg p-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <div>
-                <p className="text-sm font-medium">$ 0.087</p>
-                <p className="text-xs text-muted-foreground">Low balance - consider upgrading</p>
-              </div>
-            </div>
-            <Button size="sm" className="bg-primary text-xs">
-              Upgrade Now →
             </Button>
           </div>
         </div>
@@ -283,6 +304,9 @@ export default function CreatePage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6">
+          {/* Assistant Details Tab */}
+          {activeTab === "details" && (
+            <>
           {/* Assistant Settings */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -412,6 +436,199 @@ export default function CreatePage() {
               ))}
             </div>
           </div>
+            </>
+          )}
+
+          {/* Call Configurations Tab */}
+          {activeTab === "call" && (
+            <div className="space-y-6">
+              <div className="bg-card border border-border rounded-lg">
+                <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50">
+                  <span className="font-medium">Background Audio</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg">
+                <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50">
+                  <span className="font-medium">Call Transfer</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg">
+                <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50">
+                  <span className="font-medium">Call Ending</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg">
+                <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50">
+                  <span className="font-medium">Behavior</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Knowledge Base Tab */}
+          {activeTab === "knowledge" && (
+            <div className="grid grid-cols-2 gap-6">
+              {/* Upload PDFs */}
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl">📄</span>
+                  <h3 className="font-semibold">Upload PDFs</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add PDF files to your assistant&apos;s knowledge base
+                </p>
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                  <div className="text-4xl mb-2">📁</div>
+                  <p className="text-sm font-medium mb-1">Drag and drop a file here, or click to select</p>
+                  <p className="text-xs text-muted-foreground">Supported formats: PDF (max 10MB)</p>
+                </div>
+              </div>
+
+              {/* Website Knowledge Base */}
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-2xl">🌐</span>
+                  <h3 className="font-semibold">Website Knowledge Base</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add website content to your assistant&apos;s knowledge base
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Website URL</label>
+                    <Input placeholder="https://example.com/" />
+                  </div>
+                  <Button className="w-full bg-primary">
+                    Add to Knowledge Base
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Post-Call Tab */}
+          {activeTab === "postcall" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold mb-4">Post-Call Delivery Settings</h2>
+                <Button variant="outline" className="gap-2">
+                  <span>+</span> Add Configuration
+                </Button>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium">Delivery Method</h3>
+                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600">
+                    Remove
+                  </Button>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="text-sm font-medium mb-2 block">Select delivery method</label>
+                  <select className="w-full p-2 border border-border rounded-lg bg-background">
+                    <option>Select delivery method</option>
+                    <option>Email</option>
+                    <option>Webhook</option>
+                    <option>SMS</option>
+                  </select>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-medium mb-3">Including</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex items-start gap-3 p-3 border border-primary rounded-lg cursor-pointer">
+                      <input type="checkbox" className="mt-1" defaultChecked />
+                      <div>
+                        <p className="font-medium text-sm">Call Summary</p>
+                        <p className="text-xs text-muted-foreground">A brief overview of the conversation including key points and outcomes</p>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-3 border border-primary rounded-lg cursor-pointer">
+                      <input type="checkbox" className="mt-1" defaultChecked />
+                      <div>
+                        <p className="font-medium text-sm">Full Conversation</p>
+                        <p className="text-xs text-muted-foreground">Complete transcript of the entire conversation with timestamps</p>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-3 border border-primary rounded-lg cursor-pointer">
+                      <input type="checkbox" className="mt-1" defaultChecked />
+                      <div>
+                        <p className="font-medium text-sm">Sentiment Analysis</p>
+                        <p className="text-xs text-muted-foreground">Analysis of customer mood and emotional responses throughout the call</p>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-3 border border-primary rounded-lg cursor-pointer">
+                      <input type="checkbox" className="mt-1" defaultChecked />
+                      <div>
+                        <p className="font-medium text-sm">Extracted Information</p>
+                        <p className="text-xs text-muted-foreground">Key data points extracted from the conversation</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Extracted Variables</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Specify what variables you want to extract from the conversation. For each variable, provide a name and a description of how to extract it.
+                  </p>
+                  <div className="space-y-3">
+                    {['patient_name', 'appointment_date', 'appointment_time', 'doctor_name'].map((field, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-background border border-border rounded-lg">
+                        <span className="text-sm font-mono flex-1">{field}</span>
+                        <span className="text-sm text-muted-foreground flex-1">
+                          {field === 'patient_name' && 'Name of the patient for whom the appointment is being scheduled.'}
+                          {field === 'appointment_date' && 'The agreed upon date for the patient\'s appointment.'}
+                          {field === 'appointment_time' && 'The confirmed time for the appointment.'}
+                          {field === 'doctor_name' && 'Name of the doctor with whom the appointment is scheduled.'}
+                        </span>
+                        <Button variant="ghost" size="sm" className="text-red-500">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Integrations Tab */}
+          {activeTab === "integrations" && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔌</div>
+              <h3 className="text-xl font-semibold mb-2">Integrations Coming Soon</h3>
+              <p className="text-muted-foreground">Connect your agent with external services and APIs</p>
+            </div>
+          )}
+
+          {/* Recent Calls Tab */}
+          {activeTab === "recent" && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📞</div>
+              <h3 className="text-xl font-semibold mb-2">No Calls Yet</h3>
+              <p className="text-muted-foreground mb-4">Test your agent to see call history here</p>
+              <Button className="bg-primary">Make Test Call</Button>
+            </div>
+          )}
         </div>
       </div>
 

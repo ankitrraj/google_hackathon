@@ -51,15 +51,19 @@ npm install
 cp .env.example .env.local
 # Edit .env.local with your API keys
 
-# Run database migrations
-# Open Supabase SQL Editor and run supabase/schema.sql
+# Setup database with Prisma
+# 1. Add DATABASE_URL to .env.local (see docs/PRISMA_SETUP.md)
+# 2. Push schema to database
+npx prisma db push
+
+# 3. Generate Prisma Client
+npx prisma generate
 
 # Start development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
-
 ## 🔑 Environment Variables
 
 Create a `.env.local` file with:
