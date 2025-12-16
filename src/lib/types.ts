@@ -31,6 +31,7 @@ export interface Call {
 export interface AgentConfig {
   name: string;
   industry: string;
+  first_message?: string;
   system_prompt: string;
   questions: string[];
   extract_fields: ExtractField[];

@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS agents (
   user_id TEXT, -- User identifier (optional for MVP, can use demo mode)
   name TEXT NOT NULL CHECK (length(name) > 0 AND length(name) <= 100),
   industry TEXT NOT NULL CHECK (length(industry) > 0),
-  system_prompt TEXT NOT NULL CHECK (length(system_prompt) >= 50 AND length(system_prompt) <= 5000),
+  first_message TEXT, -- Initial greeting message
+  system_prompt TEXT NOT NULL CHECK (length(system_prompt) >= 50 AND length(system_prompt) <= 10000),
   questions JSONB NOT NULL DEFAULT '[]' CHECK (jsonb_array_length(questions) > 0),
   extract_fields JSONB NOT NULL DEFAULT '[]' CHECK (jsonb_array_length(extract_fields) > 0),
   knowledge_base TEXT, -- Optional PDF-extracted content
